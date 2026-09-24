@@ -1,0 +1,8 @@
+faster-whisper==1.2.1
+sherpa-onnx==1.13.8
+opencc-python-reimplemented==0.1.7
+yt-dlp==2026.8.19
+yt-dlp-ejs==0.8.0
+huggingface-hub==1.31.0
+PySide6-Essentials==6.11.2
+pyinstaller==6.22.3

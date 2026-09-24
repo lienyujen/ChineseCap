@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+build/
+dist/
+release/
+debug-release/
+release-macos/
+models/
+output/
+test-artifacts/
+*.spec
+*.log
+build-*.txt
+smoke*.json
+assets/ChineseCap.icns
+assets/ChineseCap.iconset/

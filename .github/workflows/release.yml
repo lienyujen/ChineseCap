@@ -1,0 +1,71 @@
+name: Build and release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag
+        required: true
+        default: v0.4.0
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - shell: powershell
+        run: .\build.ps1
+      - shell: powershell
+        run: |
+          Compress-Archive -Path release\ChineseCap -DestinationPath ChineseCap-Windows-x64.zip -CompressionLevel Optimal
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: ChineseCap-Windows-x64.zip
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            artifact: mac-apple-silicon
+            suffix: AppleSilicon
+          - runner: macos-15-intel
+            artifact: mac-intel
+            suffix: Intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: chmod +x build-macos.sh && ./build-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: release-macos/ChineseCap-macOS-${{ matrix.suffix }}.dmg
+
+  release:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release create "$TAG" artifacts/* --repo "$GITHUB_REPOSITORY" \
+            --title "ChineseCap $TAG" \
+            --notes "首個跨平台公開版本。Windows x64 ZIP、macOS Apple Silicon DMG 與 macOS Intel DMG。安裝包不內含大型模型；首次啟動後請按「下載／準備模型」。macOS 應用採 ad-hoc 簽署，未經 Apple 公證。"
